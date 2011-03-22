@@ -76,6 +76,7 @@ module MyObjectStore
     end
     
     def retrive_all_data_by_attribute(key, args)
+	    
 	if !self.current_storage.empty? && self.current_storage.has_key?(key)
 		current_storage[key][args[0].to_s]
 	  else
@@ -124,7 +125,8 @@ module MyObjectStore
   module Validations
   
    def validates(attr, options = {})
-    @options = options
+    @options ||= {}
+    @options[attr] = options
     @attr = attr
    end
    
@@ -134,7 +136,7 @@ module MyObjectStore
 	@errors = []
 	
 	def errors
-	  @errors
+	  @errors.sort
         end
          
 	def add_errors(error)
@@ -143,14 +145,42 @@ module MyObjectStore
   
     }
    
-   if @options.has_key?(:presence) && obj.send(@attr).to_s.length == 0
-    obj.add_errors("#{@attr.to_s.capitalize} can't be blank") 
-   end
+    
+     @options.each_key do |key|
+      #key is an attribute      
+     if @options[key].has_key?(:presence) && obj.send(key).to_s.length == 0
+      obj.add_errors("#{key.to_s.capitalize} can't be blank") 
+     end
    
-   if @options.has_key?(:uniqueness)
-    u = obj.class.send("find_by_#{ @attr }", obj.name)
-    obj.add_errors("#{@attr.to_s.capitalize} has already been taken") if u 
-   end
+     if @options[key].has_key?(:uniqueness)	     
+      u = obj.class.send("find_by_#{ key.to_s }", obj.name)
+      obj.add_errors("#{ key.to_s.capitalize} has already been taken") if u 
+     end
+    
+    if @options[key].has_key?(:numericality)
+	    
+	if  !obj.send(key).is_a?(Fixnum)
+	   obj.add_errors("#{key.to_s.capitalize } is not a number") 
+	end
+	
+	if obj.send(key).is_a?(Fixnum) && !@options[key][:min].nil? && !@options[key][:max].nil?
+	   obj.add_errors("#{ key.to_s.capitalize } should be between #{ @options[key][:min] } and #{ @options[key][:max]}" ) if (obj.send(key) < @options[key][:min] || obj.send(key) > @options[key][:max])
+	end
+	
+	if obj.send(key).is_a?(Fixnum) && !@options[key][:min].nil? 
+	end
+	
+	if obj.send(key).is_a?(Fixnum) && !@options[key][:max].nil? 
+	end
+		
+    end#numericality
+
+     if @options[key].has_key?(:format)
+       obj.add_errors("#{ key.to_s.capitalize } has invalid format") if !obj.send(@attr).match(@options[key][:format])
+     end
+    
+
+    end#Each
     
    end
    
