@@ -70,13 +70,14 @@ module MyObjectStore
     end
     
     def retrive_data_by_attribute(key, args)
-      if !self.current_storage.empty? && self.current_storage.has_key?(key)
-	return current_storage[key][args[0]].first if current_storage[key][args[0]]
+      @val = nil
+      if !self.current_storage.empty? && self.current_storage.has_key?(key)	    
+	@val =  current_storage[key][args[0]].first if current_storage[key][args[0]]
       end
+     @val
     end
     
     def retrive_all_data_by_attribute(key, args)
-	    
 	if !self.current_storage.empty? && self.current_storage.has_key?(key)
 		current_storage[key][args[0].to_s]
 	  else
@@ -95,6 +96,7 @@ module MyObjectStore
          @seprator == 'all_by' ? retrive_all_data_by_attribute(@current_attr.to_sym, args)  : retrive_data_by_attribute(@current_attr.to_sym, args)      
        end
      }
+      "Method missing called" 
      send(method_id, *args)
     end
     
@@ -132,6 +134,7 @@ module MyObjectStore
    
    def  perform_validations(obj)
     "Inside validations"
+    
     obj.instance_eval {
 	@errors = []
 	
@@ -145,16 +148,17 @@ module MyObjectStore
   
     }
    
-    
-     @options.each_key do |key|
-      #key is an attribute      
+     @options.keys.each do |key|
+     
      if @options[key].has_key?(:presence) && obj.send(key).to_s.length == 0
       obj.add_errors("#{key.to_s.capitalize} can't be blank") 
      end
    
-     if @options[key].has_key?(:uniqueness)	     
-      u = obj.class.send("find_by_#{ key.to_s }", obj.name)
-      obj.add_errors("#{ key.to_s.capitalize} has already been taken") if u 
+     if @options[key].has_key?(:uniqueness)
+      #method_to_call = ("find_by_" << key.to_s).to_sym
+      #u = obj.class.send(method_to_call, obj.send(key)) 
+      u = current_storage[key][obj.send(key)] if current_storage[key]
+      obj.add_errors("#{ key.to_s.capitalize } has already been taken") if u 
      end
     
     if @options[key].has_key?(:numericality)
@@ -182,7 +186,7 @@ module MyObjectStore
 
     end#Each
     
-   end
+   end#petrform_validations
    
   end#Validations
 end
