@@ -172,9 +172,11 @@ module MyObjectStore
 	end
 	
 	if obj.send(key).is_a?(Fixnum) && !@options[key][:min].nil? 
+	  obj.add_errors("#{key.to_s.capitalize} should be minimum " << @options[key][:min].to_s) if obj.send(key) < @options[key][:min]
 	end
 	
 	if obj.send(key).is_a?(Fixnum) && !@options[key][:max].nil? 
+	  obj.add_errors("#{key.to_s.capitalize} should be less than " << @options[key][:max].to_s) if obj.send(key) < @options[key][:max]
 	end
 		
     end#numericality
